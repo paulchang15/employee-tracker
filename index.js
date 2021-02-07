@@ -1,6 +1,5 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
-let tables;
 const connection = mysql.createConnection({
   host: "localhost",
   port: 3306,
@@ -38,13 +37,14 @@ function questions() {
       console.log(answer.tables);
       switch (answer.tables) {
         case "View all departments":
-          getDepartment();
+          getAll("department");
           break;
         case "View all roles":
-          getRoles();
+          getAll("role");
           break;
         case "View all employees":
-          getEmployees();
+          getAll("employee");
+          break;
         case "Add a department":
           addDepartment();
           break;
@@ -54,30 +54,21 @@ function questions() {
         case "Add an employee":
           addEmployee();
           break;
+        case "Update an employee role":
+          updateRole();
+          break;
+        case "Exit":
+          return;
       }
     });
 }
 
-getDepartment = () => {
-  connection.query("SELECT * FROM department", function (err, res) {
+getAll = (tableName) => {
+  connection.query(`SELECT * FROM ${tableName}`, function (err, res) {
     if (err) throw err;
     console.table(res);
     questions();
   });
-};
-getRoles = () => {
-  connection.query("SELECT * FROM role", function (err, res) {
-    if (err) throw err;
-    console.table(res);
-  });
-  questions();
-};
-getEmployees = () => {
-  connection.query("SELECT * FROM employee", function (err, res) {
-    if (err) throw err;
-    console.table(res);
-  });
-  questions();
 };
 addDepartment = () => {
   inquirer
@@ -103,61 +94,72 @@ addDepartment = () => {
     });
 };
 addRole = () => {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "title",
-        message: "What is the title of the role you would like to add?",
-      },
-      {
-        type: "input",
-        name: "salary",
-        message: "What is the salary of this role?",
-      },
-      {
-        type: "list",
-        name: "department",
-        message: "What department does this employee belong in?",
-        choices: [],
-      },
-    ])
-    .then((answer) => {
-      connection.query(
-        "INSERT INTO role SET ?",
+  connection.query("SELECT * FROM department", function (err, res) {
+    if (err) throw err;
+    var arr = [];
+    for (let i = 0; i < res.length; i++) {
+      arr.push(res[i].name);
+      console.log(res[i].name);
+    }
+    inquirer
+      .prompt([
         {
-          title: answer.title,
-          salary: answer.salary,
-          department_id: answer.department,
+          type: "input",
+          name: "title",
+          message: "What is the title of the role you would like to add?",
         },
-        function (err, res) {
-          if (err) throw err;
-          console.table(res);
-        }
-      );
-      questions();
-    });
-};
-addEmployee = () => {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "department",
-        message: "What is the name of the department you would like to add?",
-      },
-    ])
-    .then((answer) => {
-      connection.query(
-        "INSERT INTO department SET ?",
         {
-          name: answer.department,
+          type: "input",
+          name: "salary",
+          message: "What is the salary of this role?",
         },
-        function (err, res) {
-          if (err) throw err;
-          console.table(res);
-        }
-      );
-      questions();
-    });
+        {
+          type: "list",
+          name: "department",
+          message: "What department does this employee belong in?",
+          choices: arr,
+        },
+      ])
+      .then((answer) => {
+        console.log(answer.salary);
+        connection.query(
+          "INSERT INTO role SET ?",
+          [
+            {
+              title: answer.title,
+              salary: answer.salary,
+              department_id: arr,
+            },
+          ],
+          function (err, res) {
+            if (err) throw err;
+            console.table(res);
+          }
+        );
+        questions();
+      });
+  });
 };
+// addEmployee = () => {
+//   inquirer
+//     .prompt([
+//       {
+//         type: "input",
+//         name: "department",
+//         message: "What is the name of the department you would like to add?",
+//       },
+//     ])
+//     .then((answer) => {
+//       connection.query(
+//         "INSERT INTO department SET ?",
+//         {
+//           name: answer.department,
+//         },
+//         function (err, res) {
+//           if (err) throw err;
+//           console.table(res);
+//         }
+//       );
+//       questions();
+//     });
+// };
