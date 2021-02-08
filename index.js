@@ -58,7 +58,7 @@ function questions() {
           updateRole();
           break;
         case "Exit":
-          return;
+          connection.end();
       }
     });
 }
@@ -67,8 +67,10 @@ getAll = (tableName) => {
   connection.query(`SELECT * FROM ${tableName}`, function (err, res) {
     if (err) throw err;
     console.table(res);
+
     questions();
   });
+  addEmployee(res);
 };
 addDepartment = () => {
   inquirer
@@ -96,11 +98,11 @@ addDepartment = () => {
 addRole = () => {
   connection.query("SELECT * FROM department", function (err, res) {
     if (err) throw err;
-    var arr = [];
-    for (let i = 0; i < res.length; i++) {
-      arr.push(res[i].name);
-      console.log(res[i].name);
-    }
+
+    const arr = res.map(({ id, name }) => ({
+      name: name,
+      value: id,
+    }));
     inquirer
       .prompt([
         {
@@ -121,14 +123,14 @@ addRole = () => {
         },
       ])
       .then((answer) => {
-        console.log(answer.salary);
+        console.log(answer);
         connection.query(
           "INSERT INTO role SET ?",
           [
             {
               title: answer.title,
               salary: answer.salary,
-              department_id: arr,
+              department_id: answer.department,
             },
           ],
           function (err, res) {
@@ -140,26 +142,46 @@ addRole = () => {
       });
   });
 };
-// addEmployee = () => {
-//   inquirer
-//     .prompt([
-//       {
-//         type: "input",
-//         name: "department",
-//         message: "What is the name of the department you would like to add?",
-//       },
-//     ])
-//     .then((answer) => {
-//       connection.query(
-//         "INSERT INTO department SET ?",
-//         {
-//           name: answer.department,
-//         },
-//         function (err, res) {
-//           if (err) throw err;
-//           console.table(res);
-//         }
-//       );
-//       questions();
-//     });
-// };
+addEmployee = () => {
+  connection.query(
+    "SELECT role.*, department.*, FROM role INNER JOIN department ON department.name",
+    function (err, res) {
+      if (err) throw err;
+
+      const arr = res.map(({ first_name, id, title, name }) => ({
+        name: title,
+        name: name,
+        value: id,
+      }));
+      console.log(arr);
+      inquirer
+        .prompt([
+          {
+            type: "input",
+            name: "employee",
+            message:
+              "Please enter the first and last name of the employee you would like to add.",
+          },
+          {
+            type: "list",
+            name: "role",
+            message: "What is the role of this employee?",
+            choices: arr,
+          },
+        ])
+        .then((answer) => {
+          connection.query(
+            "INSERT INTO employee SET ?",
+            {
+              first_name: answer.employee,
+            },
+            function (err, res) {
+              if (err) throw err;
+              console.table(res);
+            }
+          );
+          questions();
+        });
+    }
+  );
+};
