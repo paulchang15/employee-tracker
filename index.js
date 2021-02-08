@@ -70,7 +70,6 @@ getAll = (tableName) => {
 
     questions();
   });
-  addEmployee(res);
 };
 addDepartment = () => {
   inquirer
@@ -143,24 +142,75 @@ addRole = () => {
   });
 };
 addEmployee = () => {
+  // connection.query("SELECT * FROM department", function (err, res) {
+  //   if (err) throw err;
+
+  //   const arr = res.map(({ id, name }) => ({
+  //     name: name,
+  //     value: id,
+  //   }));
+
+  //   inquirer
+  //     .prompt([
+  //       {
+  //         type: "input",
+  //         name: "first",
+  //         message:
+  //           "Please enter the first name of the employee you would like to add.",
+  //       },
+  //       {
+  //         type: "input",
+  //         name: "last",
+  //         message:
+  //           "Please enter the last name of the employee you would like to add.",
+  //       },
+  //       {
+  //         type: "list",
+  //         name: "role",
+  //         message: "What is the role of this employee?",
+  //         choices: arr,
+  //       },
+  //     ])
+  //     .then((answer) => {
+  //       connection.query(
+  //         "INSERT INTO employee SET ?",
+  //         {
+  //           first_name: answer.first,
+  //           last_name: answer.last,
+  //           role_id: answer.department,
+  //         },
+  //         function (err, res) {
+  //           if (err) throw err;
+  //           console.table(res);
+  //         }
+  //       );
+  //     });
+  // });
   connection.query(
-    "SELECT role.*, department.*, FROM role INNER JOIN department ON department.name",
+    `SELECT * FROM role LEFT JOIN employee WHERE role.column`,
     function (err, res) {
       if (err) throw err;
 
-      const arr = res.map(({ first_name, id, title, name }) => ({
+      const arr = res.map(({ title, role_id, manager_id }) => ({
         name: title,
-        name: name,
-        value: id,
+        value: role_id,
+        manager_id,
       }));
       console.log(arr);
+
       inquirer
         .prompt([
           {
             type: "input",
-            name: "employee",
+            name: "first",
             message:
-              "Please enter the first and last name of the employee you would like to add.",
+              "Please enter the first name of the employee you would like to add.",
+          },
+          {
+            type: "input",
+            name: "last",
+            message:
+              "Please enter the last name of the employee you would like to add.",
           },
           {
             type: "list",
@@ -168,19 +218,26 @@ addEmployee = () => {
             message: "What is the role of this employee?",
             choices: arr,
           },
+          {
+            type: "list",
+            name: "manager",
+            message: "Who is the manager of this employee?",
+            choices: arr,
+          },
         ])
         .then((answer) => {
           connection.query(
             "INSERT INTO employee SET ?",
             {
-              first_name: answer.employee,
+              first_name: answer.first,
+              last_name: answer.last,
+              role_id: answer.role,
             },
             function (err, res) {
               if (err) throw err;
               console.table(res);
             }
           );
-          questions();
         });
     }
   );
