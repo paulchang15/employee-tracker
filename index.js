@@ -188,8 +188,7 @@ addEmployee = () => {
               if (err) throw err;
               const managerChoices = res.map(
                 ({ id, first_name, last_name, man_ind }) => ({
-                  name: first_name,
-                  last_name,
+                  name: first_name + " " + last_name,
                   value: id,
                   man_ind,
                 })
@@ -249,22 +248,22 @@ updateRole = () => {
   connection.query(`SELECT * FROM employee`, function (err, res) {
     if (err) throw err;
     const empChoices = res.map(({ id, first_name, last_name }) => ({
-      name: first_name,
-      last_name,
+      name: first_name + " " + last_name,
       value: id,
     }));
+    console.log(empChoices);
     inquirer
       .prompt([
         {
           type: "list",
           name: "empUpdate",
-          message: "What role would you like to change this employee to?",
+          message: "Which employee would you like to update?",
           choices: empChoices,
         },
       ])
       .then((answer) => {
-        let employee = answer.empUpdate;
-        console.log(employee);
+        let employee_id = answer.empUpdate;
+        console.log(employee_id);
         connection.query(`SELECT * FROM role`, function (err, res) {
           if (err) throw err;
           const roleChoices = res.map(({ id, title }) => ({
@@ -281,20 +280,24 @@ updateRole = () => {
               },
             ])
             .then((answer) => {
+              console.log("emp: ", employee_id, " role:", answer.role);
               connection.query(
                 "UPDATE employee SET ? WHERE ?",
-                {
-                  role_id: answer.role,
-                },
-                {
-                  id: employee,
-                },
+                [
+                  {
+                    role_id: answer.role,
+                  },
+                  {
+                    id: employee_id,
+                  },
+                ],
 
                 function (err, res) {
                   if (err) throw err;
                   console.table(res);
                 }
               );
+              questions();
             });
         });
       });
