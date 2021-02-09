@@ -251,7 +251,6 @@ updateRole = () => {
       name: first_name + " " + last_name,
       value: id,
     }));
-    console.log(empChoices);
     inquirer
       .prompt([
         {
@@ -263,7 +262,6 @@ updateRole = () => {
       ])
       .then((answer) => {
         let employee_id = answer.empUpdate;
-        console.log(employee_id);
         connection.query(`SELECT * FROM role`, function (err, res) {
           if (err) throw err;
           const roleChoices = res.map(({ id, title }) => ({
